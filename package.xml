@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>AquilaUAV_ros</name>
-  <version>0.0.0</version>
-  <description>The AquilaUAV_ros package</description>
+  <name>drone-games_ws</name>
+  <version>1.0.2</version>
+  <description>The drone-games_ws package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -13,16 +13,13 @@
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>D</license>
-  <license>O</license>
-  <license>O</license>
-  <license>T</license>
+  <license>GPLv3</license>
 
 
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/AquilaUAV_ros</url> -->
+  <!-- <url type="website">http://wiki.ros.org/drone-games_ws</url> -->
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->
