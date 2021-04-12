@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+   <node name="flysky_fs_6s_node" pkg="AquilaUAV_ros" type="flysky_fs_6s_remap.py" />
+
+   <node name="joy_fs_6s_node" pkg="joy" type="joy_node" args="_deadzone:=0.0 _autorepeat_rate:=100" launch-prefix="bash -c 'sleep 1; $0 $@' " />
+
+   <node name="control_proxy_node" pkg="AquilaUAV_ros" type="control_proxy.py" />
+
+</launch>
