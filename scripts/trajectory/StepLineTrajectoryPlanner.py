@@ -22,6 +22,7 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
         self.border_size = 10.0
         self.forward_throw = 10.0
         self.backward_throw = 10.0
+        self.takeoff_height = 1.0
         self.obstacles_avoided = {}
         self.trajectories = {}
         self.disarm = False
@@ -220,7 +221,7 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
                 move_start = np.array(self.trajectories[n][i])
                 move_vector = np.array(self.trajectories[n][i + 1]) - move_start
                 new_pose = move_start + move_vector * (
-                            target_length - accumulated_length) / self.get_maximum_start_vectors_lengths(i)
+                        target_length - accumulated_length) / self.get_maximum_start_vectors_lengths(i)
             if new_pose is None:
                 new_pose = self.trajectories[n][points_amount - 1]
                 if n == self.instances_num - 1:

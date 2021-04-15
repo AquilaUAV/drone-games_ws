@@ -83,6 +83,10 @@ class MultirotorController(object):
             self._service_proxy(n, "set_mode", SetMode, custom_mode=new_mode)
 
     def mc_takeoff(self, pt, n, dt):
+
+        # TODO: REMOVE LINE BELOW
+        self._arming(n, True)
+
         if dt < self.takeoff_timeout:
             self.set_vel(pt, 0, 0, 0.3)
             if dt > self.takeoff_timeout / 2:

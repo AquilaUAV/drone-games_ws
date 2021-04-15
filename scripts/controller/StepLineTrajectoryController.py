@@ -15,7 +15,7 @@ class StepLineTrajectoryController(MultirotorController):
         self.instances_num = self._get_num_drones()
         self.initial_poses_data = {}
         self.initial_poses_samples = {}
-        self.max_poses_errors = 12.0
+        self.max_poses_errors = 2.0
 
     def estimate_initial_poses(self, n, dt):
         if dt < self.takeoff_timeout / 2:
