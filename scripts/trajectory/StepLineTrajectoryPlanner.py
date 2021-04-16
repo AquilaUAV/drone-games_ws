@@ -15,7 +15,7 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
         super().__init__(node_name="line_trajectory_planner")
         self.first_step = -2.0
         rospy.loginfo(f"first_step initialized with {self.first_step}")
-        self.distance_between_drones = 2.0
+        self.distance_between_drones = 3.0
         rospy.loginfo(f"distance_between_drones initialized with {self.distance_between_drones}")
         self.initial_poses = None
         self.maximum_start_vectors_lengths = {}
@@ -51,7 +51,12 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
             free = [0.0, 0.0]
         else:
             free_spaces = self._walls.get(key)
-            previous = self.obstacles_avoid(key - 1)
+            if len(self._central.get(key)) > 2:
+                previous = [0.0, 0.0]
+            else:
+                previous = self.obstacles_avoid(key - 1)
+            rospy.logwarn(free_spaces)
+            rospy.logwarn(previous)
             maximum_free_space = max([min(*spaces[2:]) for spaces in free_spaces])
             maximum_spaces = [spaces for spaces in free_spaces if min(*spaces[2:]) == maximum_free_space]
             optimal_lines = [[spaces[0], spaces[1], spaces[2] - maximum_free_space, spaces[3] - maximum_free_space] for
@@ -59,11 +64,17 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
                              maximum_spaces]
             good_vectors = []
             for line in optimal_lines:
-                if line[2] == 0:
+                if line[2] == 0 and line[3] == 0:
+                    # Точка
+                    center = line[:2]
+                    center[0] -= previous[0]
+                    center[1] -= previous[1]
+                    good_vectors.append(center)
+                elif line[2] == 0:
                     # Вертикальная
                     down_y = line[1] - line[3] / 2
                     up_y = line[1] + line[3] / 2
-                    both_x = line[0]
+                    both_x = line[0] - previous[0]
                     down_vector = [both_x - previous[0], down_y - previous[1]]
                     up_vector = [both_x - previous[0], up_y - previous[1]]
                     if linalg.norm(down_vector) < linalg.norm(up_vector):
@@ -77,7 +88,7 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
                     # Горизонтальная
                     left_x = line[0] - line[2] / 2
                     right_x = line[0] + line[2] / 2
-                    both_y = line[1]
+                    both_y = line[1] - previous[1]
                     left_vector = [left_x - previous[0], both_y - previous[1]]
                     right_vector = [right_x - previous[0], both_y - previous[1]]
                     if linalg.norm(left_vector) < linalg.norm(right_vector):
@@ -90,6 +101,9 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
             min_vector_len = min([linalg.norm(np.array(vector)) for vector in good_vectors])
             best_vectors = [vector for vector in good_vectors if linalg.norm(np.array(vector)) == min_vector_len]
             free = best_vectors[0]
+            free[0] += previous[0]
+            free[1] += previous[1]
+            rospy.logwarn(free)
         self.obstacles_avoided[key] = free
         return free[0], free[1]
 
@@ -175,7 +189,6 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
                         obstacle_vector_y /= linalg.norm(obstacle_vector_y)
                         vector_free_x, vector_free_y = self.obstacles_avoid(key)
                         obstacle_avoid_vector = obstacle_vector_x * vector_free_x + obstacle_vector_y * vector_free_y
-
                     if key == 1 and i == 0:
                         move_start = move_start + move_vector * self.border_size / linalg.norm(move_vector)
                     elif key == -1 and i == len(curent_central) - 2:

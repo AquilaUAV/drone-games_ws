@@ -223,5 +223,5 @@ class MultiagentPathPlanner(object):
 
 
 if __name__ == '__main__':
-    path_finder_2d = MultiagentPathPlanner()  # (render=MeshcatViewer, no_sleep=False) or render=PyPhysxViewer
+    path_finder_2d = MultiagentPathPlanner(render=MeshcatViewer)  # (render=MeshcatViewer, no_sleep=False) or render=PyPhysxViewer
     path_finder_2d.main()

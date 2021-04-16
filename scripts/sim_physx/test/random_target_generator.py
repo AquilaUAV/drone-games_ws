@@ -19,9 +19,11 @@ while True:
     for x in range(X):
         for y in range(Y):
             for z in range(Z):
-                first.append([R * (random() - 0.5) + x * L - X // 2 * L, R * (random() - 0.5) + y * L - Y // 2 * L,
+                first.append([R * (random() - 0.5) + x * L - X // 2 * L,
+                              R * (random() - 0.5) + y * L - Y // 2 * L,
                               R * (random() - 0.5) + z * L - Z // 2 * L])
-                second.append([R * (random() - 0.5) + x * L - X // 2 * L, R * (random() - 0.5) + y * L - Y // 2 * L,
+                second.append([R * (random() - 0.5) + x * L - X // 2 * L,
+                               R * (random() - 0.5) + y * L - Y // 2 * L,
                                R * (random() - 0.5) + z * L - Z // 2 * L])
 
     points = MultiDOFJointTrajectory()

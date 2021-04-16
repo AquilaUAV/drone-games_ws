@@ -202,5 +202,5 @@ class MultirotorObserver(object):
 
 
 if __name__ == '__main__':
-    multirotor_observer = MultirotorObserver(render=MeshcatViewer)  # (render=MeshcatViewer or render=PyPhysxViewer)
+    multirotor_observer = MultirotorObserver()  # (render=MeshcatViewer or render=PyPhysxViewer)
     multirotor_observer.main()
