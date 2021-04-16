@@ -4,7 +4,7 @@ from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectory
 from geometry_msgs.msg import Transform
 from time import sleep
 
-pub_target = rospy.Publisher("/path_planner/target_vectors", MultiDOFJointTrajectory, queue_size=1)
+pub_target = rospy.Publisher("/physx_path_planner/target_vectors", MultiDOFJointTrajectory, queue_size=1)
 
 X = 3
 Y = 3
@@ -28,6 +28,7 @@ while True:
                                z * L - Z // 2 * L + height])
 
     points = MultiDOFJointTrajectory()
+    points.header.frame_id = "-1"
     point_first = MultiDOFJointTrajectoryPoint()
     point_second = MultiDOFJointTrajectoryPoint()
 
@@ -51,4 +52,4 @@ while True:
     rospy.init_node("random_target_generator")
     pub_target.publish(points)
 
-    sleep(5)
+    sleep(0.1)

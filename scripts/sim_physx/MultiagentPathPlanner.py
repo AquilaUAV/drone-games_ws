@@ -23,7 +23,7 @@ from __init__ import radius
 
 
 class MultiagentPathPlanner(object):
-    def __init__(self, is_2d=False, use_gpu=True, no_sleep=True, render=None, rate=20, node_name="path_planner"):
+    def __init__(self, is_2d=False, use_gpu=True, no_sleep=True, render=None, rate=30, node_name="physx_path_planner"):
         self.node_name = node_name
         self.is_2d = is_2d
         self.use_gpu = use_gpu
@@ -33,7 +33,7 @@ class MultiagentPathPlanner(object):
         self.radius = rospy.get_param(f"/{self.node_name}/radius", radius)
         self.scene_flags = []
         self.actors_velocities = rospy.get_param(f'/{self.node_name}/actors_velocities', 1.00)
-        self.actors_final_error = rospy.get_param(f'/{self.node_name}/actors_final_error', 0.001)
+        self.actors_final_error = rospy.get_param(f'/{self.node_name}/actors_final_error', 0.01)
         self.actors_error_queue_size = rospy.get_param(f'/{self.node_name}/actors_error_queue_size', 10)
         self.actors_error_queue = deque()
         self.time_limit = rospy.get_param(f'/{self.node_name}/time_limit', 20.0)
@@ -160,7 +160,7 @@ class MultiagentPathPlanner(object):
         self.busy = True
 
         points = MultiDOFJointTrajectory()
-        points.header.frame_id = "map"
+        points.header.frame_id = msg.header.frame_id
         points.header.stamp = rospy.get_rostime()
 
         trajectory = self.manager.list()
@@ -223,5 +223,5 @@ class MultiagentPathPlanner(object):
 
 
 if __name__ == '__main__':
-    path_finder_2d = MultiagentPathPlanner(render=MeshcatViewer, no_sleep=False)  # (render=MeshcatViewer, no_sleep=False) or render=PyPhysxViewer
+    path_finder_2d = MultiagentPathPlanner()  # (render=MeshcatViewer, no_sleep=False) or render=PyPhysxViewer
     path_finder_2d.main()

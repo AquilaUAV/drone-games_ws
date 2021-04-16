@@ -2,33 +2,39 @@
 # coding=utf8
 
 from AbstractTrajectoryPlanner import AbstractTrajectoryPlanner
+from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
+from geometry_msgs.msg import Transform
 from geometry_msgs.msg import PoseArray, Pose
-from std_msgs.msg import Float64, Bool
+from std_msgs.msg import Float64, Int64, Bool
 import rospy
 import numpy as np
 from numpy import linalg
 from math import *
 
 
-class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
+class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
     def __init__(self):
-        super().__init__(node_name="line_trajectory_planner")
-        self.first_step = -2.0
-        rospy.loginfo(f"first_step initialized with {self.first_step}")
+        super().__init__(node_name="swarm_trajectory_planner")
         self.distance_between_drones = 2.0
         rospy.loginfo(f"distance_between_drones initialized with {self.distance_between_drones}")
         self.initial_poses = None
-        self.maximum_start_vectors_lengths = {}
-        self.border_size = 10.0
-        self.forward_throw = 10.0
-        self.backward_throw = 10.0
-        self.takeoff_height = 1.0
-        self.obstacles_avoided = {}
-        self.trajectories = {}
         self.disarm = False
-        for n in range(self.instances_num):
-            self.trajectories[n] = []
+        self.step = 0
+        self.border_size = 10.0
+        self.forward_throw = 5.0
+        self.backward_throw = 5.0
+        self.takeoff_height = 5.0
+        self.trajectories = MultiDOFJointTrajectory()
+        self.trajectories.header.frame_id = "map"
+        self.trajectory_requested = set({})
         self.trajectory_created = set({})
+
+    def _transform_from_point(self, point):
+        transform = Transform()
+        transform.translation.x = point[0]
+        transform.translation.y = point[1]
+        transform.translation.z = point[2]
+        return transform
 
     def set_initial_poses(self, msg):
         poses = msg.poses
@@ -40,70 +46,58 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
         self.distance_between_drones = msg.data
         rospy.loginfo(f"step_size is now {self.distance_between_drones}")
 
+    def path_planner_cb(self, msg):
+        if msg.header.frame_id == "0-0":
+            # rospy.logwarn(msg)
+            self.trajectories.points.extend(msg.points)
+            rospy.logwarn(f"created: 0-0")
+            self.trajectory_created.add(msg.header.frame_id)
+        pass
+
     def trajectories_update(self):
         if self.initial_poses is None:
             return
-        if 0 not in self.trajectory_created:
-            for n in range(self.instances_num):
-                self.trajectories[n].append(self.initial_poses[n])
-            self.trajectory_created.add(0)
-        if -2 not in self.trajectory_created and -1 in self.trajectory_created and self._central.get(-1) is not None:
-            final_poses = self.calc_final_poses(self._central.get(-1), land_height=-0.1)
-            for n in range(self.instances_num):
-                self.trajectories[n].append(final_poses[n])
-            self.trajectory_created.add(-2)
+        if "0-0" not in self.trajectory_requested:
+            target = MultiDOFJointTrajectory()
+            target.header.frame_id = "0-0"
+            first_point = MultiDOFJointTrajectoryPoint()
+            for point in self.initial_poses:
+                first_point.transforms.append(self._transform_from_point(point))
+            second_point = MultiDOFJointTrajectoryPoint()
+            for point in self.initial_poses:
+                point[2] += self.takeoff_height
+                second_point.transforms.append(self._transform_from_point(point))
+            target.points.append(first_point)
+            target.points.append(second_point)
+            self.pub_path_planner.publish(target)
+            rospy.logwarn(f"requested: 0-0")
+            self.trajectory_requested.add("0-0")
+        if self.step < 0:
+            self.step = 0
+        len_trajectories = len(self.trajectories.points)
+        if self.step >= len_trajectories - 1:
+            self.step = len_trajectories - 1
+        if len_trajectories > 0:
+            self.pub_target_states.publish(self.trajectories.points[self.step])
 
-        keys = self.get_central_keys()
-        if keys is None:
-            return
-
-        for key in keys:
-            if key in self.trajectory_created:
-                continue
-            for n in range(self.instances_num):
-                curent_central = self._central.get(key)
-                for i in range(len(curent_central) - 1):
-                    move_start = np.array(curent_central[i])
-                    move_vector = np.array(curent_central[i + 1]) - move_start
-                    throw_vector = None
-
-                    obstacle_avoid_vector = np.array([0.0, 0.0, 0.0])
-                    if i == len(curent_central) - 2:
-                        obstacle_vector_y = np.array([0.0, 0.0, 1.0])
-                        obstacle_vector_x = np.cross(move_vector, obstacle_vector_y)
-                        obstacle_vector_x /= linalg.norm(obstacle_vector_x)
-                        obstacle_vector_y /= linalg.norm(obstacle_vector_y)
-                        vector_free_x, vector_free_y = self.obstacles_avoid(key)
-                        obstacle_avoid_vector = obstacle_vector_x * vector_free_x + obstacle_vector_y * vector_free_y
-                    if key == 1 and i == 0:
-                        move_start = move_start + move_vector * self.border_size / linalg.norm(move_vector)
-                    elif key == -1 and i == len(curent_central) - 2:
-                        move_vector = move_vector - move_vector * self.border_size / linalg.norm(move_vector)
-                    if key != -1 and i == len(curent_central) - 2:
-                        move_vector = move_vector - move_vector * self.backward_throw / linalg.norm(move_vector)
-                        throw_vector = move_vector * (self.forward_throw + self.backward_throw) / linalg.norm(
-                            move_vector)
-                    if key == 1:
-                        self.trajectories[n].append(move_start.tolist())
-                    self.trajectories[n].append((move_start + move_vector + obstacle_avoid_vector).tolist())
-                    if throw_vector is not None:
-                        self.trajectories[n].append(
-                            (move_start + move_vector + throw_vector + obstacle_avoid_vector).tolist())
-            self.trajectory_created.add(key)
-
+    def apply_step(self, msg):
+        self.step += msg.data
 
     def _subscribe_on_topics(self):
+        rospy.Subscriber(f"/physx_path_planner/trajectory", MultiDOFJointTrajectory, self.path_planner_cb)
         rospy.Subscriber(f"/{self.node_name}/set_initial_poses", PoseArray, self.set_initial_poses)
         rospy.Subscriber(f"/{self.node_name}/set_distance_between_drones", Float64, self.set_distance_between_drones)
-        rospy.Subscriber(f"/{self.node_name}/apply_step", Float64, self.apply_step)
+        rospy.Subscriber(f"/{self.node_name}/apply_step", Int64, self.apply_step)
 
     def _create_publishers(self):
-        self.pub_target_states = rospy.Publisher(f"/{self.node_name}/target_states", PoseArray, queue_size=1)
-        self.pub_disarm = rospy.Publisher("/step_line_trajectory_controller/disarm", Bool, queue_size=1)
+        self.pub_path_planner = rospy.Publisher(f"/physx_path_planner/target_vectors", MultiDOFJointTrajectory,
+                                                queue_size=1)
+        self.pub_target_states = rospy.Publisher(f"/{self.node_name}/target_states", MultiDOFJointTrajectoryPoint,
+                                                 queue_size=1)
+        self.pub_disarm = rospy.Publisher("/swarm_trajectory_controller/disarm", Bool, queue_size=1)
 
     def _planner_loop(self):
         rate = rospy.Rate(220)
-
         while not rospy.is_shutdown():
             if self.disarm:
                 self.pub_disarm.publish(Bool(data=True))
@@ -113,5 +107,5 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
 
 
 if __name__ == '__main__':
-    planner = StepLineTrajectoryPlanner()
+    planner = SwarmTrajectoryPlanner()
     planner.main()
