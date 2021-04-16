@@ -86,5 +86,5 @@ class LineTrajectoryController(MultirotorController):
 
 
 if __name__ == '__main__':
-    controller = StepLineTrajectoryController()
+    controller = LineTrajectoryController()
     controller.main()
