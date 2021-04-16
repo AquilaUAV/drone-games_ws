@@ -11,6 +11,7 @@ Y = 3
 Z = 3
 R = 5.0
 L = 1
+height = 10
 
 while True:
     first = []
@@ -22,9 +23,9 @@ while True:
                 first.append([R * (random() - 0.5) + x * L - X // 2 * L,
                               R * (random() - 0.5) + y * L - Y // 2 * L,
                               R * (random() - 0.5) + z * L - Z // 2 * L])
-                second.append([R * (random() - 0.5) + x * L - X // 2 * L,
-                               R * (random() - 0.5) + y * L - Y // 2 * L,
-                               R * (random() - 0.5) + z * L - Z // 2 * L])
+                second.append([x * L - X // 2 * L,
+                               y * L - Y // 2 * L,
+                               z * L - Z // 2 * L + height])
 
     points = MultiDOFJointTrajectory()
     point_first = MultiDOFJointTrajectoryPoint()
@@ -50,4 +51,4 @@ while True:
     rospy.init_node("random_target_generator")
     pub_target.publish(points)
 
-    sleep(0.1)
+    sleep(5)

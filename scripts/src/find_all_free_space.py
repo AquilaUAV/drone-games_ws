@@ -12,7 +12,7 @@ free_spaces2 = [[0.0, 0.0, 0.8, 0.8], [2.0, 0.0, 0.8, 0.8], [-2.0, 0.0, 0.8, 0.8
 free_spaces3 = [[0.0, 0.0, 2.8, 1.8], [6.0, 0.0, 3.8, 2.8], [-6.0, 0.0, 1.8, 5.8], [0.0, 6.0, 4.8, 2.8],
                 [0.0, -6.0, 2.8, 4.8]]
 
-free_spaces = free_spaces1
+free_spaces = free_spaces3
 
 maximum_free_space = max([min(*spaces[2:]) for spaces in free_spaces])
 if maximum_free_space < radius * 2:
