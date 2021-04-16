@@ -15,7 +15,7 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
         super().__init__(node_name="line_trajectory_planner")
         self.first_step = -2.0
         rospy.loginfo(f"first_step initialized with {self.first_step}")
-        self.distance_between_drones = 3.0
+        self.distance_between_drones = 2.0
         rospy.loginfo(f"distance_between_drones initialized with {self.distance_between_drones}")
         self.initial_poses = None
         self.maximum_start_vectors_lengths = {}
