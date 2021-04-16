@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+   <node name="StepLineTrajectoryPlanner" pkg="drone-games_ws" type="StepLineTrajectoryPlanner.py" />
+
+   <node name="LineTrajectoryController" pkg="drone-games_ws" type="LineTrajectoryController.py" />
+
+</launch>
