@@ -32,6 +32,7 @@ actors = {}
 data = {}
 for n in range(1, instances_num + 1):
     data[n] = {}
+
 global control_mode_velocities
 control_mode_velocities = False
 
@@ -42,13 +43,8 @@ publish_velocities = rospy.get_param(f'/{node_name}/publish_velocities', True)
 publish_accelerations_predicted = rospy.get_param(f'/{node_name}/publish_accelerations_predicted', True)
 auto_update_pose = rospy.get_param(f'/{node_name}/auto_update_pose', True)
 auto_update_vel = rospy.get_param(f'/{node_name}/auto_update_vel', True)
-auto_update_adaptive_tau = rospy.get_param(f'/{node_name}/update_adaptive_tau', True)
-tau_update_kalman_k = rospy.get_param(f'/{node_name}/tau_update_kalman_k', 1.0)
 acceleration_predictor = rospy.get_param(f'/{node_name}/acceleration_predictor', True)
-use_gui = rospy.get_param(f'/{node_name}/use_gui', True)
-use_gpu = rospy.get_param(f'/{node_name}/use_gpu', True)
 info_simulation_fps = rospy.get_param(f'/{node_name}/info_simulation_fps', True)
-observer_rate = rospy.get_param(f'/{node_name}/rate', 220)
 
 if use_gpu:
     Physics.init_gpu()
@@ -82,8 +78,6 @@ def vel_topic_cb(msg, callback_args):
     velocity = [msg.twist.linear.x, msg.twist.linear.y, msg.twist.linear.z]
     if auto_update_vel:
         actors[n].set_linear_velocity(velocity)
-    if acceleration_predictor and auto_update_adaptive_tau:
-        update_adaptive_tau(velocity)
 
 
 def subscribe_on_topics():
@@ -112,26 +106,6 @@ def spawn_drones(radius):
         actor.set_max_angular_velocity(0)
         actors[n] = actor
         scene.add_actor(actor)
-
-
-tau_sec_ticks = 1000
-tau_min = -15.0
-tau_max = 15.0
-global tau_func
-tau_func = []
-
-
-def read_adaptive_tau():
-    pass
-
-
-def update_adaptive_tau(velocity):
-    # print(velocity)
-    pass
-
-
-def get_adaptive_acceleration(error):
-    return copysign(pow(abs(error), 1 / 2), error)
 
 
 def acceleration_predict():
@@ -219,6 +193,9 @@ def main():
         frame_counter = 0
 
     rospy.loginfo(node_name + " started")
+
+    frame_counter = 0
+    last_frames_time = time()
 
     while True:
         scene.simulate(rate.period())

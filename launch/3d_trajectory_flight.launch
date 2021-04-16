@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <launch>
 
-   <node name="PathPlanner" pkg="drone-games_ws" type="PathPlanner.py" />
+   <node name="MultiagentPathPlanner" pkg="drone-games_ws" type="MultiagentPathPlanner.py" />
+
+   <node name="MultirotorObserver" pkg="drone-games_ws" type="MultirotorObserver.py" />
 
 </launch>

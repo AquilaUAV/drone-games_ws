@@ -19,22 +19,24 @@ from scipy.optimize import linear_sum_assignment
 from scipy.sparse.csgraph import maximum_bipartite_matching
 from scipy.sparse import csr_matrix
 
+from __init__ import radius
+
 
 class MultiagentPathPlanner(object):
-    def __init__(self, is_2d=False, use_gpu=True, no_sleep=True, render=None, rate=100, node_name="path_planner"):
+    def __init__(self, is_2d=False, use_gpu=True, no_sleep=True, render=None, rate=20, node_name="path_planner"):
         self.node_name = node_name
         self.is_2d = is_2d
         self.use_gpu = use_gpu
         self.no_sleep = no_sleep
         self.render = render
         self.rate = Rate(rate)
-        self.radius = rospy.get_param(f"/{self.node_name}/radius", 0.3)
+        self.radius = rospy.get_param(f"/{self.node_name}/radius", radius)
         self.scene_flags = []
-        self.actors_velocities = 2.00
-        self.actors_final_error = 0.001
-        self.actors_error_queue_size = 10
+        self.actors_velocities = rospy.get_param(f'/{self.node_name}/actors_velocities', 1.00)
+        self.actors_final_error = rospy.get_param(f'/{self.node_name}/actors_final_error', 0.001)
+        self.actors_error_queue_size = rospy.get_param(f'/{self.node_name}/actors_error_queue_size', 10)
         self.actors_error_queue = deque()
-        self.time_limit = 20.0
+        self.time_limit = rospy.get_param(f'/{self.node_name}/time_limit', 20.0)
         self.busy = False
         self.manager = multiprocessing.Manager()
 
@@ -185,6 +187,8 @@ class MultiagentPathPlanner(object):
             points.points.append(point)
 
         self.trajectory_pub.publish(points)
+
+        rospy.loginfo(f"Trajectory length: {len(trajectory)}")
 
         self.busy = False
 
