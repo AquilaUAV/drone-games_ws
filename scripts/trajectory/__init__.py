@@ -1,2 +1,1 @@
-from .AbstractTrajectoryPlanner import AbstractTrajectoryPlanner
-from .StepLineTrajectoryPlanner import StepLineTrajectoryPlanner
+radius = 0.5

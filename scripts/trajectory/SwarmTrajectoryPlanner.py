@@ -7,6 +7,7 @@ from geometry_msgs.msg import Transform
 from geometry_msgs.msg import PoseArray, Pose
 from std_msgs.msg import Float64, Int64, Bool
 import rospy
+from __init__ import radius
 import numpy as np
 from numpy import linalg
 from math import *
@@ -24,10 +25,12 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
         self.forward_throw = 5.0
         self.backward_throw = 5.0
         self.takeoff_height = 5.0
+        self.radius = radius
         self.trajectories = MultiDOFJointTrajectory()
         self.trajectories.header.frame_id = "map"
         self.trajectory_requested = set({})
         self.trajectory_created = set({})
+        self.trajectoty_version = [0, 0]
 
     def _transform_from_point(self, point):
         transform = Transform()
@@ -35,6 +38,9 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
         transform.translation.y = point[1]
         transform.translation.z = point[2]
         return transform
+
+    def _get_optimal_move_shape(self, point):
+        return
 
     def set_initial_poses(self, msg):
         poses = msg.poses
@@ -47,19 +53,20 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
         rospy.loginfo(f"step_size is now {self.distance_between_drones}")
 
     def path_planner_cb(self, msg):
-        if msg.header.frame_id == "0-0":
-            # rospy.logwarn(msg)
+        version = msg.header.frame_id.split(".")
+        if int(version[0]) == self.trajectoty_version[0] and int(version[1]) == self.trajectoty_version[1]:
             self.trajectories.points.extend(msg.points)
-            rospy.logwarn(f"created: 0-0")
+            rospy.logwarn(f"created: {msg.header.frame_id}")
             self.trajectory_created.add(msg.header.frame_id)
-        pass
 
     def trajectories_update(self):
         if self.initial_poses is None:
             return
-        if "0-0" not in self.trajectory_requested:
+
+        if "0.0" not in self.trajectory_requested:
+            self.trajectoty_version = [0, 0]
             target = MultiDOFJointTrajectory()
-            target.header.frame_id = "0-0"
+            target.header.frame_id = "0.0"
             first_point = MultiDOFJointTrajectoryPoint()
             for point in self.initial_poses:
                 first_point.transforms.append(self._transform_from_point(point))
@@ -70,8 +77,13 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
             target.points.append(first_point)
             target.points.append(second_point)
             self.pub_path_planner.publish(target)
-            rospy.logwarn(f"requested: 0-0")
-            self.trajectory_requested.add("0-0")
+            rospy.logwarn(f"requested: {target.header.frame_id}")
+            self.trajectory_requested.add(target.header.frame_id)
+
+        if "0.1" not in self.trajectory_requested and "0.0" in self.trajectory_created:
+            target = MultiDOFJointTrajectory()
+            target.header.frame_id = "0.1"
+
         if self.step < 0:
             self.step = 0
         len_trajectories = len(self.trajectories.points)

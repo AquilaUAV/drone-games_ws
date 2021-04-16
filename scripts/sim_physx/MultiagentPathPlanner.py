@@ -7,7 +7,7 @@ from pyphysx_render.pyrender import PyPhysxViewer
 from pyphysx_render.meshcat_render import MeshcatViewer
 import rospy
 from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
-from geometry_msgs.msg import Transform
+from geometry_msgs.msg import Transform, Twist
 from std_msgs.msg import Float64
 from time import *
 import multiprocessing
@@ -132,7 +132,7 @@ class MultiagentPathPlanner(object):
             scene.simulate(self.rate.period())
             new_position = []
             for actor in scene.get_dynamic_rigid_actors():
-                new_position.append(list(actor.get_global_pose()[0]))
+                new_position.append([list(actor.get_global_pose()[0]), list(actor.get_linear_velocity())])
             trajectory.append(new_position)
             if self.render is not None:
                 render.update()
@@ -180,10 +180,15 @@ class MultiagentPathPlanner(object):
             point = MultiDOFJointTrajectoryPoint()
             for agent in step:
                 transform = Transform()
-                transform.translation.x = agent[0]
-                transform.translation.y = agent[1]
-                transform.translation.z = agent[2]
+                twist = Twist()
+                transform.translation.x = agent[0][0]
+                transform.translation.y = agent[0][1]
+                transform.translation.z = agent[0][2]
                 point.transforms.append(transform)
+                twist.linear.x = agent[1][0]
+                twist.linear.y = agent[1][1]
+                twist.linear.z = agent[1][2]
+                point.velocities.append(twist)
             points.points.append(point)
 
         self.trajectory_pub.publish(points)
