@@ -97,8 +97,8 @@ class SwarmTrajectoryController(MultirotorController):
                 if error > self.pose_error_windup:
                     error = self.pose_error_windup
                 vector = error * vector / linalg.norm(vector)
-                # self.set_pos(pt, *(pose + vector).tolist())
-                self.set_pos(pt, *(point).tolist())
+                self.set_pos(pt, *(pose + vector).tolist())
+                # self.set_pos(pt, *(point).tolist())
             else:
                 self.set_pos(pt, *(point).tolist())
 
