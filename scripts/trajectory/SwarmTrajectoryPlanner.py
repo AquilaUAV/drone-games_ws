@@ -15,11 +15,12 @@ from math import *
 
 
 class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
-    def __init__(self):
+    def __init__(self, rate=30):
         super().__init__(node_name="swarm_trajectory_planner")
         self.initial_poses = None
         self.disarm = False
         self.instances_num = None
+        self.rate = rate
         self.step = 0
         self.border_size = 10.0
         self.throw_reserve_points = 32
@@ -263,7 +264,7 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
         self.pub_disarm = rospy.Publisher("/swarm_trajectory_controller/disarm", Bool, queue_size=1)
 
     def _planner_loop(self):
-        rate = rospy.Rate(60)
+        rate = rospy.Rate(self.rate)
         while not rospy.is_shutdown():
             if self.disarm:
                 self.pub_disarm.publish(Bool(data=True))
