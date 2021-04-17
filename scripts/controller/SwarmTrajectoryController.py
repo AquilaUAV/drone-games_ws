@@ -19,8 +19,8 @@ class SwarmTrajectoryController(MultirotorController):
         self.initial_poses_samples = {}
         self.max_poses_errors = 0.5
         self.step_size = 1
-        self.pose_error_ku = 2.0
-        self.pose_error_windup = 2.5
+        self.pose_error_ku = 3.0
+        self.pose_error_windup = 2.0
         self.near_point_border = 2.0
 
     def estimate_initial_poses(self, n, dt):
@@ -97,7 +97,8 @@ class SwarmTrajectoryController(MultirotorController):
                 if error > self.pose_error_windup:
                     error = self.pose_error_windup
                 vector = error * vector / linalg.norm(vector)
-                self.set_pos(pt, *(pose + vector).tolist())
+                # self.set_pos(pt, *(pose + vector).tolist())
+                self.set_pos(pt, *(point).tolist())
             else:
                 self.set_pos(pt, *(point).tolist())
 
