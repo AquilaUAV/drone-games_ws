@@ -23,7 +23,7 @@ from __init__ import radius
 
 
 class MultiagentPathPlanner(object):
-    def __init__(self, is_2d=False, use_gpu=True, no_sleep=True, render=None, rate=30, node_name="physx_path_planner"):
+    def __init__(self, is_2d=False, use_gpu=True, no_sleep=True, render=None, rate=20, node_name="physx_path_planner"):
         self.node_name = node_name
         self.is_2d = is_2d
         self.use_gpu = use_gpu

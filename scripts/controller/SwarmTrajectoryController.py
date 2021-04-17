@@ -12,7 +12,7 @@ from math import *
 
 
 class SwarmTrajectoryController(MultirotorController):
-    def __init__(self, freq=30, node_name="swarm_trajectory_controller", takeoff_timeout=1.0):
+    def __init__(self, freq=20, node_name="swarm_trajectory_controller", takeoff_timeout=1.0):
         super().__init__(freq, node_name, takeoff_timeout)
         self.instances_num = self._get_num_drones()
         self.initial_poses_data = {}
