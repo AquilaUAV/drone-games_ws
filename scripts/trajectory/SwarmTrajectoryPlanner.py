@@ -23,8 +23,8 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
         self.step = 0
         self.border_size = 10.0
         self.throw_reserve_points = 32
-        self.forward_throw = 2.0
-        self.backward_throw = 2.0
+        self.forward_throw = 5.0
+        self.backward_throw = 5.0
         self.radius = radius
         self.distance_between_drones = 2.0
         self.optimal_shape_size = radius * 3
