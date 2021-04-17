@@ -16,7 +16,7 @@ class SwarmTrajectoryController(MultirotorController):
         self.instances_num = self._get_num_drones()
         self.initial_poses_data = {}
         self.initial_poses_samples = {}
-        self.max_poses_errors = 1.5
+        self.max_poses_errors = 0.5
         self.step_size = 1
         self.pose_error_ku = 3
 

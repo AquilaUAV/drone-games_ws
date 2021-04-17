@@ -20,12 +20,14 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
         rospy.loginfo(f"distance_between_drones initialized with {self.distance_between_drones}")
         self.initial_poses = None
         self.disarm = False
+        self.instances_num = None
         self.step = 0
         self.border_size = 10.0
         self.forward_throw = 5.0
         self.backward_throw = 5.0
         self.takeoff_height = 5.0
         self.radius = radius
+        self.optimal_shape_size = radius * 3
         self.trajectories = MultiDOFJointTrajectory()
         self.trajectories.header.frame_id = "map"
         self.trajectory_requested = set({})
@@ -40,12 +42,49 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
         return transform
 
     def _get_optimal_move_shape(self, point):
-        return
+        points = []
+        if self.initial_poses is None:
+            return points
+        point = np.array(point)
+        size = int(ceil(pow(self.instances_num, 1 / 3)))
+        instances_counter = 0
+        x_max = 0
+        y_max = 0
+        z_max = 0
+        for z_num in range(size):
+            if instances_counter >= self.instances_num:
+                break
+            for x_num in range(size):
+                if instances_counter >= self.instances_num:
+                    break
+                for y_num in range(size):
+                    if instances_counter >= self.instances_num:
+                        break
+                    points.append(np.array([x_num * self.optimal_shape_size,
+                                            y_num * self.optimal_shape_size,
+                                            z_num * self.optimal_shape_size]))
+                    instances_counter += 1
+                    x_max = max(x_num + 1, x_max)
+                    y_max = max(y_num + 1, y_max)
+                    z_max = max(z_num + 1, z_max)
+        for num in range(len(points)):
+            points[num] += point
+            if x_max > 1:
+                points[num] -= np.array(
+                    [(x_max - 1) * self.optimal_shape_size / 2, 0, 0])
+            if y_max > 1:
+                points[num] -= np.array(
+                    [0, (y_max - 1) * self.optimal_shape_size / 2, 0])
+            if z_max > 1:
+                points[num] -= np.array(
+                    [0, 0, (z_max - 1) * self.optimal_shape_size / 2])
+        return points
 
     def set_initial_poses(self, msg):
         poses = msg.poses
         poses = [[pose.position.x, pose.position.y, pose.position.z] for pose in poses]
         self.initial_poses = poses
+        self.instances_num = len(self.initial_poses)
         rospy.loginfo(f"initial_poses is now {self.initial_poses}")
 
     def set_distance_between_drones(self, msg):
@@ -71,16 +110,18 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
             for point in self.initial_poses:
                 first_point.transforms.append(self._transform_from_point(point))
             second_point = MultiDOFJointTrajectoryPoint()
-            for point in self.initial_poses:
-                point[2] += self.takeoff_height
+            for point in self._get_optimal_move_shape([0, 0, 10]):
                 second_point.transforms.append(self._transform_from_point(point))
             target.points.append(first_point)
             target.points.append(second_point)
             self.pub_path_planner.publish(target)
             rospy.logwarn(f"requested: {target.header.frame_id}")
             self.trajectory_requested.add(target.header.frame_id)
+        if "0.0" in self.trajectory_created:
+            return
 
         if "0.1" not in self.trajectory_requested and "0.0" in self.trajectory_created:
+            self.trajectoty_version = [0, 1]
             target = MultiDOFJointTrajectory()
             target.header.frame_id = "0.1"
 
