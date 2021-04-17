@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <launch>
 
+   <node name="MultirotorObserver" pkg="drone-games_ws" type="MultirotorObserver.py" />
+
    <node name="StepLineTrajectoryPlanner" pkg="drone-games_ws" type="StepLineTrajectoryPlanner.py" />
 
    <node name="StepLineTrajectoryController" pkg="drone-games_ws" type="StepLineTrajectoryController.py" />
-
-   <node name="MultirotorObserver" pkg="drone-games_ws" type="MultirotorObserver.py" />
 
 </launch>

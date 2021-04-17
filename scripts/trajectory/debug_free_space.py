@@ -12,9 +12,10 @@ free_spaces3 = [[0.0, 0.0, 2.8, 1.8], [6.0, 0.0, 3.8, 2.8], [-6.0, 0.0, 1.8, 5.8
 
 free_spaces0 = free_spaces3
 radius0 = 0.6
+num0 = 6
 
 space_finder = FreeSpaceFinder2D()
-found_points = space_finder.find_optimal_points(free_spaces0, radius0)
+found_points = space_finder.find_optimal_points(free_spaces0, radius0, num0)
 
 # ==========
 # ==========

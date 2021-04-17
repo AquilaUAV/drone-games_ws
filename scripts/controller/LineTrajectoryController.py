@@ -59,7 +59,8 @@ class LineTrajectoryController(MultirotorController):
 
     def update_target_poses(self, msg):
         for n in range(1, self.instances_num + 1):
-            self._data[n]["target_state"] = [msg.poses[n - 1].position.x, msg.poses[n - 1].position.y,
+            self._data[n]["target_state"] = [msg.poses[n - 1].position.x,
+                                             msg.poses[n - 1].position.y,
                                              msg.poses[n - 1].position.z]
 
     def subscribe_on_topics(self):

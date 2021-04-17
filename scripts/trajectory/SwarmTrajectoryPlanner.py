@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf8
 
+from FreeSpaceFinder2D import FreeSpaceFinder2D
 from AbstractTrajectoryPlanner import AbstractTrajectoryPlanner
 from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
 from geometry_msgs.msg import Transform
@@ -16,23 +17,25 @@ from math import *
 class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
     def __init__(self):
         super().__init__(node_name="swarm_trajectory_planner")
-        self.distance_between_drones = 2.0
-        rospy.loginfo(f"distance_between_drones initialized with {self.distance_between_drones}")
         self.initial_poses = None
         self.disarm = False
         self.instances_num = None
         self.step = 0
         self.border_size = 10.0
-        self.forward_throw = 5.0
-        self.backward_throw = 5.0
-        self.takeoff_height = 5.0
+        self.throw_reserve_points = 32
+        self.forward_throw = 2.0
+        self.backward_throw = 2.0
         self.radius = radius
+        self.distance_between_drones = 2.0
         self.optimal_shape_size = radius * 3
+        self.optimal_shape_step = 0.0
         self.trajectories = MultiDOFJointTrajectory()
         self.trajectories.header.frame_id = "map"
+        self.free_space_finder = FreeSpaceFinder2D()
         self.trajectory_requested = set({})
-        self.trajectory_created = set({})
-        self.trajectoty_version = [0, 0]
+        self.trajectory_created = set()
+        self.trajectoty_version = [1, 0]
+        rospy.loginfo(f"distance_between_drones initialized with {self.distance_between_drones}")
 
     def _transform_from_point(self, point):
         transform = Transform()
@@ -85,6 +88,13 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
         poses = [[pose.position.x, pose.position.y, pose.position.z] for pose in poses]
         self.initial_poses = poses
         self.instances_num = len(self.initial_poses)
+        self.optimal_shape_step = (int(ceil(pow(self.instances_num, 1 / 3))) - 1) * self.optimal_shape_size / 2
+        self.optimal_shape_step *= sqrt(2)
+        initial_point = MultiDOFJointTrajectoryPoint()
+        for point in self.initial_poses:
+            initial_point.transforms.append(self._transform_from_point(point))
+        self.trajectory_created.add("0.3")
+        self.trajectories.points.append(initial_point)
         rospy.loginfo(f"initial_poses is now {self.initial_poses}")
 
     def set_distance_between_drones(self, msg):
@@ -95,35 +105,138 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
         version = msg.header.frame_id.split(".")
         if int(version[0]) == self.trajectoty_version[0] and int(version[1]) == self.trajectoty_version[1]:
             self.trajectories.points.extend(msg.points)
-            rospy.logwarn(f"created: {msg.header.frame_id}")
+            rospy.loginfo(f"created: {msg.header.frame_id}")
             self.trajectory_created.add(msg.header.frame_id)
+            if self.trajectoty_version[1] < 4:
+                self.trajectoty_version[1] += 1
+            else:
+                self.trajectoty_version[0] += 1
+                self.trajectoty_version[1] = 0
 
     def trajectories_update(self):
         if self.initial_poses is None:
             return
 
-        if "0.0" not in self.trajectory_requested:
-            self.trajectoty_version = [0, 0]
-            target = MultiDOFJointTrajectory()
-            target.header.frame_id = "0.0"
-            first_point = MultiDOFJointTrajectoryPoint()
-            for point in self.initial_poses:
-                first_point.transforms.append(self._transform_from_point(point))
-            second_point = MultiDOFJointTrajectoryPoint()
-            for point in self._get_optimal_move_shape([0, 0, 10]):
-                second_point.transforms.append(self._transform_from_point(point))
-            target.points.append(first_point)
-            target.points.append(second_point)
-            self.pub_path_planner.publish(target)
-            rospy.logwarn(f"requested: {target.header.frame_id}")
-            self.trajectory_requested.add(target.header.frame_id)
-        if "0.0" in self.trajectory_created:
-            return
-
-        if "0.1" not in self.trajectory_requested and "0.0" in self.trajectory_created:
-            self.trajectoty_version = [0, 1]
-            target = MultiDOFJointTrajectory()
-            target.header.frame_id = "0.1"
+        if f"{self.trajectoty_version[0]}.{self.trajectoty_version[1]}" not in self.trajectory_requested:
+            if self.trajectoty_version[1] == 0:
+                if f"{self.trajectoty_version[0] - 1}.{3}" in self.trajectory_created:
+                    central = self._central.get(self.trajectoty_version[0])
+                    if central is not None:
+                        target = MultiDOFJointTrajectory()
+                        target.header.frame_id = f"{self.trajectoty_version[0]}.{self.trajectoty_version[1]}"
+                        first_point = MultiDOFJointTrajectoryPoint()
+                        second_point = MultiDOFJointTrajectoryPoint()
+                        first_point = self.trajectories.points[-1]
+                        move_point = np.array(central[0])
+                        move_vector = np.array(central[1]) - move_point
+                        if self.trajectoty_version[0] == 1:
+                            move_vector = move_vector * self.border_size / linalg.norm(move_vector)
+                        else:
+                            move_vector = move_vector * (
+                                    self.forward_throw + self.optimal_shape_step) / linalg.norm(move_vector)
+                        for point in self._get_optimal_move_shape((move_point + move_vector).tolist()):
+                            second_point.transforms.append(self._transform_from_point(point))
+                        target.points.append(first_point)
+                        target.points.append(second_point)
+                        self.pub_path_planner.publish(target)
+                        rospy.loginfo(f"requested: {target.header.frame_id}")
+                        self.trajectory_requested.add(target.header.frame_id)
+            elif self.trajectoty_version[1] == 1:
+                if f"{self.trajectoty_version[0]}.{0}" in self.trajectory_created:
+                    central = self._central.get(self.trajectoty_version[0])
+                    if central is not None:
+                        for i in range(len(central) - 1):
+                            old_point = self.trajectories.points[-1]
+                            move_point = np.array(central[i])
+                            move_vector = np.array(central[i + 1]) - move_point
+                            if i == 0:
+                                if self.trajectoty_version[0] == 1:
+                                    move_point += move_vector * self.border_size / linalg.norm(move_vector)
+                                else:
+                                    move_point += move_vector * (
+                                            self.forward_throw + self.optimal_shape_step) / linalg.norm(move_vector)
+                            move_vector = np.array(central[i + 1]) - move_point
+                            if i == len(central) - 2:
+                                move_vector -= move_vector * (
+                                        self.backward_throw + self.optimal_shape_step) / linalg.norm(move_vector)
+                            target = MultiDOFJointTrajectoryPoint()
+                            for drone in range(len(old_point.transforms)):
+                                new_vector = old_point.transforms[drone].translation
+                                new_vector = np.array([new_vector.x, new_vector.y, new_vector.z])
+                                new_vector = new_vector + move_vector
+                                new_vector = self._transform_from_point(new_vector)
+                                target.transforms.append(new_vector)
+                            for j in range(self.throw_reserve_points):
+                                self.trajectories.points.append(target)
+                        new_point = f"{self.trajectoty_version[0]}.{self.trajectoty_version[1]}"
+                        self.trajectory_requested.add(new_point)
+                        self.trajectory_created.add(new_point)
+                        rospy.loginfo(f"requested: {new_point}")
+                        rospy.loginfo(f"created: {new_point}")
+                        self.trajectoty_version[1] += 1
+            elif self.trajectoty_version[1] == 2:
+                if f"{self.trajectoty_version[0]}.{1}" in self.trajectory_created:
+                    walls = self._walls.get(self.trajectoty_version[0])
+                    central = self._central.get(self.trajectoty_version[0])
+                    if walls is not None and central is not None:
+                        target = MultiDOFJointTrajectory()
+                        target.header.frame_id = f"{self.trajectoty_version[0]}.{self.trajectoty_version[1]}"
+                        first_point = self.trajectories.points[-1]
+                        second_point = MultiDOFJointTrajectoryPoint()
+                        free_space = self.free_space_finder.find_optimal_points(walls, self.radius, self.instances_num)
+                        move_point = np.array(central[len(central) - 2])
+                        move_vector = np.array(central[len(central) - 1]) - move_point
+                        move_vector -= move_vector * self.backward_throw / linalg.norm(move_vector)
+                        final_plane = move_point + move_vector
+                        x_free = np.cross(move_vector, np.array([0.0, 0.0, 1.0]))
+                        y_free = np.cross(x_free, move_vector)
+                        x_free /= linalg.norm(x_free)
+                        y_free /= linalg.norm(y_free)
+                        for step_back in range(self.instances_num // len(free_space) + 1):
+                            if step_back != (self.instances_num // len(free_space)):
+                                for space in free_space:
+                                    point = final_plane + space[0] * x_free + space[
+                                        1] * y_free - move_vector * self.distance_between_drones * step_back / linalg.norm(
+                                        move_vector)
+                                    second_point.transforms.append(self._transform_from_point(point))
+                            elif self.instances_num % len(free_space) != 0:
+                                final_free_space = self.free_space_finder.find_optimal_points(walls, self.radius,
+                                                                                              self.instances_num % len(
+                                                                                                  free_space))
+                                for space in final_free_space:
+                                    point = final_plane + space[0] * x_free + space[
+                                        1] * y_free - move_vector * self.distance_between_drones * step_back / linalg.norm(
+                                        move_vector)
+                                    second_point.transforms.append(self._transform_from_point(point))
+                        target.points.append(first_point)
+                        target.points.append(second_point)
+                        self.pub_path_planner.publish(target)
+                        rospy.loginfo(f"requested: {target.header.frame_id}")
+                        self.trajectory_requested.add(target.header.frame_id)
+            elif self.trajectoty_version[1] == 3:
+                if f"{self.trajectoty_version[0]}.{2}" in self.trajectory_created:
+                    central = self._central.get(self.trajectoty_version[0])
+                    if central is not None:
+                        target = MultiDOFJointTrajectoryPoint()
+                        old_point = self.trajectories.points[-1]
+                        move_vector = np.array(central[len(central) - 1]) - np.array(central[len(central) - 2])
+                        move_vector = move_vector * (
+                                self.backward_throw + self.forward_throw + 2 * self.optimal_shape_step) / linalg.norm(
+                            move_vector)
+                        for drone in range(len(old_point.transforms)):
+                            new_vector = old_point.transforms[drone].translation
+                            new_vector = np.array([new_vector.x, new_vector.y, new_vector.z])
+                            new_vector = new_vector + move_vector
+                            new_vector = self._transform_from_point(new_vector)
+                            target.transforms.append(new_vector)
+                        self.trajectories.points.append(target)
+                        new_point = f"{self.trajectoty_version[0]}.{self.trajectoty_version[1]}"
+                        self.trajectory_requested.add(new_point)
+                        self.trajectory_created.add(new_point)
+                        rospy.loginfo(f"requested: {new_point}")
+                        rospy.loginfo(f"created: {new_point}")
+                        self.trajectoty_version[0] += 1
+                        self.trajectoty_version[1] = 0
 
         if self.step < 0:
             self.step = 0
@@ -150,7 +263,7 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
         self.pub_disarm = rospy.Publisher("/swarm_trajectory_controller/disarm", Bool, queue_size=1)
 
     def _planner_loop(self):
-        rate = rospy.Rate(220)
+        rate = rospy.Rate(60)
         while not rospy.is_shutdown():
             if self.disarm:
                 self.pub_disarm.publish(Bool(data=True))

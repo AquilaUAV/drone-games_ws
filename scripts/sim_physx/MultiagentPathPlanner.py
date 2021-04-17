@@ -23,7 +23,7 @@ from __init__ import radius
 
 
 class MultiagentPathPlanner(object):
-    def __init__(self, is_2d=False, use_gpu=True, no_sleep=True, render=None, rate=30, node_name="physx_path_planner"):
+    def __init__(self, is_2d=False, use_gpu=True, no_sleep=True, render=None, rate=20, node_name="physx_path_planner"):
         self.node_name = node_name
         self.is_2d = is_2d
         self.use_gpu = use_gpu
@@ -114,7 +114,7 @@ class MultiagentPathPlanner(object):
         scene = Scene() if not self.use_gpu else Scene(
             scene_flags=[SceneFlag.ENABLE_PCM, SceneFlag.ENABLE_GPU_DYNAMICS, SceneFlag.ENABLE_STABILIZATION],
             broad_phase_type=BroadPhaseType.GPU,
-            gpu_max_num_partitions=8, gpu_dynamic_allocation_scale=8.,
+            gpu_max_num_partitions=1, gpu_dynamic_allocation_scale=1.,
         )
 
         self._spawn_actors(start_points, scene)
@@ -228,5 +228,5 @@ class MultiagentPathPlanner(object):
 
 
 if __name__ == '__main__':
-    path_finder_2d = MultiagentPathPlanner(render=MeshcatViewer, no_sleep=False)  # (render=MeshcatViewer, no_sleep=False) or render=PyPhysxViewer
+    path_finder_2d = MultiagentPathPlanner()  # (render=MeshcatViewer, no_sleep=False) or render=PyPhysxViewer
     path_finder_2d.main()

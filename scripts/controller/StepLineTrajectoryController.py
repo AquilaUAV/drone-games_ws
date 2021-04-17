@@ -16,8 +16,8 @@ class StepLineTrajectoryController(MultirotorController):
         self.instances_num = self._get_num_drones()
         self.initial_poses_data = {}
         self.initial_poses_samples = {}
-        self.max_poses_errors = 4.0  # МЕНЯТЬ ЭТО
-        self.pose_error_ku = 3.0  # МЕНЯТЬ ЭТО
+        self.max_poses_errors = 6.0  # МЕНЯТЬ ЭТО
+        self.pose_error_ku = 1.0  # МЕНЯТЬ ЭТО
 
     def estimate_initial_poses(self, n, dt):
         if dt < self.takeoff_timeout / 2:
@@ -92,14 +92,15 @@ class StepLineTrajectoryController(MultirotorController):
             pose = self._data[n].get("inner_state")
             if pose is None:
                 return
+            point = np.array(point)
             pose = np.array(pose)
             vector = np.array(point) - pose
             vector = self.pose_error_ku * vector
-            self.set_pos(pt, *(pose + vector).tolist())
+            self.set_pos(pt, *(point).tolist())
 
         if dt < 2.0:
             step = Float64()
-            step.data = 1 / 220
+            step.data = 1 / 220 * self.instances_num
             self.pub_apply_step.publish(step)
 
         poses_errors = self.estimate_poses_errors()

@@ -115,7 +115,7 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
         move_finish = move_finish - move_vector * self.border_size / linalg.norm(move_vector)
         move_finish[2] = land_height
         land_x = np.cross(move_vector, np.array([0.0, 0.0, 1.0]))
-        lanx_y = np.cross(np.array([0.0, 0.0, 1.0]), land_x)
+        lanx_y = np.cross(land_x, move_vector)
         land_x /= linalg.norm(land_x)
         lanx_y /= linalg.norm(lanx_y)
         size_x = ceil(sqrt(self.instances_num))
@@ -183,8 +183,8 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
 
                     obstacle_avoid_vector = np.array([0.0, 0.0, 0.0])
                     if i == len(curent_central) - 2:
-                        obstacle_vector_y = np.array([0.0, 0.0, 1.0])
-                        obstacle_vector_x = np.cross(move_vector, obstacle_vector_y)
+                        obstacle_vector_x = np.cross(move_vector, np.array([0.0, 0.0, 1.0]))
+                        obstacle_vector_y = np.cross(obstacle_vector_x, move_vector)
                         obstacle_vector_x /= linalg.norm(obstacle_vector_x)
                         obstacle_vector_y /= linalg.norm(obstacle_vector_y)
                         vector_free_x, vector_free_y = self.obstacles_avoid(key)

@@ -44,12 +44,10 @@ class MultirotorObserver(object):
         self.render = None
         if render is not None:
             self.render = render(wait_for_open=True, open_meshcat=True)
-        if self.use_gpu:
-            Physics.init_gpu()
         self.scene = Scene() if not self.use_gpu else Scene(
-            scene_flags=[SceneFlag.ENABLE_PCM, SceneFlag.ENABLE_STABILIZATION, ],
+            scene_flags=[SceneFlag.ENABLE_PCM, SceneFlag.ENABLE_GPU_DYNAMICS, SceneFlag.ENABLE_STABILIZATION],
             broad_phase_type=BroadPhaseType.GPU,
-            gpu_max_num_partitions=8, gpu_dynamic_allocation_scale=8.,
+            gpu_max_num_partitions=1, gpu_dynamic_allocation_scale=1.,
         )
 
     def _get_num_drones(self):
@@ -162,7 +160,10 @@ class MultirotorObserver(object):
             for n in range(1, self.instances_num + 1):
                 states.accelerations.append(acceleration_predicted[n])
         states.time_from_start = rospy.get_rostime()
-        self.states_pub.publish(states)
+        try:
+            self.states_pub.publish(states)
+        except:
+            pass
 
     def _multirotor_observer_loop(self):
         frame_counter = 0

@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <launch>
 
-   <node name="SwarmTrajectoryController" pkg="drone-games_ws" type="SwarmTrajectoryController.py" />
+   <node name="MultiagentPathPlanner" pkg="drone-games_ws" type="MultiagentPathPlanner.py" />
+
+   <node name="SwarmTrajectoryController" pkg="drone-games_ws" type="SwarmTrajectoryController.py" launch-prefix="bash -c 'sleep 2; $0 $@' " />
 
    <node name="SwarmTrajectoryPlanner" pkg="drone-games_ws" type="SwarmTrajectoryPlanner.py" />
 

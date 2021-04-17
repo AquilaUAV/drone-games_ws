@@ -8,17 +8,20 @@ from MultirotorController import MultirotorController
 from geometry_msgs.msg import PoseArray, Pose
 from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
 from std_msgs.msg import Float64, Int64
+from math import *
 
 
 class SwarmTrajectoryController(MultirotorController):
-    def __init__(self, freq=220, node_name="swarm_trajectory_controller", takeoff_timeout=1.0):
+    def __init__(self, freq=60, node_name="swarm_trajectory_controller", takeoff_timeout=1.0):
         super().__init__(freq, node_name, takeoff_timeout)
         self.instances_num = self._get_num_drones()
         self.initial_poses_data = {}
         self.initial_poses_samples = {}
         self.max_poses_errors = 0.5
         self.step_size = 1
-        self.pose_error_ku = 3
+        self.pose_error_ku = 2.0
+        self.pose_error_windup = 2.5
+        self.near_point_border = 2.0
 
     def estimate_initial_poses(self, n, dt):
         if dt < self.takeoff_timeout / 2:
@@ -66,9 +69,15 @@ class SwarmTrajectoryController(MultirotorController):
                                              msg.transforms[n - 1].translation.y,
                                              msg.transforms[n - 1].translation.z]
 
+    def update_states(self, msg):
+        for n in range(1, self.instances_num + 1):
+            pose = msg.transforms[n - 1].translation
+            self._data[n]["inner_state"] = [pose.x, pose.y, pose.z]
+
     def subscribe_on_topics(self):
         rospy.Subscriber("/swarm_trajectory_planner/target_states", MultiDOFJointTrajectoryPoint,
                          self.update_target_poses)
+        # rospy.Subscriber("/multirotor_observer/states", MultiDOFJointTrajectoryPoint, self.update_states)
 
     def control_raw(self, pt, n, dt):
 
@@ -76,15 +85,21 @@ class SwarmTrajectoryController(MultirotorController):
         self.estimate_initial_poses(n, dt)
 
         point = self._data[n].get("target_state")
-        if point is not None:
-            pose = self._data[n].get("local_position/pose")
-            if pose is None:
-                return
+        pose = self._data[n].get("local_position/pose")
+        if point is not None and pose is not None:
             pose = pose.pose.position
-            pose = np.array([pose.x, pose.y, pose.z])
-            vector = np.array(point) - pose
-            vector = self.pose_error_ku * vector
-            self.set_pos(pt, *(pose + vector).tolist())
+            pose = [pose.x, pose.y, pose.z]
+            pose = np.array(pose)
+            point = np.array(point)
+            vector = point - pose
+            if linalg.norm(vector) < self.near_point_border:
+                error = self.pose_error_ku * linalg.norm(vector) * exp(linalg.norm(vector))
+                if error > self.pose_error_windup:
+                    error = self.pose_error_windup
+                vector = error * vector / linalg.norm(vector)
+                self.set_pos(pt, *(pose + vector).tolist())
+            else:
+                self.set_pos(pt, *(point).tolist())
 
         poses_errors = self.estimate_poses_errors()
         if len(poses_errors) > 0 and max(poses_errors.values()) < self.max_poses_errors:
