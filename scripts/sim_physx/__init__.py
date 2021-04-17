@@ -1,1 +1,1 @@
-radius = 1.0
+radius = 0.5

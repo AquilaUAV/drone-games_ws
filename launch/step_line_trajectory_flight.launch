@@ -5,4 +5,6 @@
 
    <node name="StepLineTrajectoryController" pkg="drone-games_ws" type="StepLineTrajectoryController.py" />
 
+   <node name="MultirotorObserver" pkg="drone-games_ws" type="MultirotorObserver.py" />
+
 </launch>

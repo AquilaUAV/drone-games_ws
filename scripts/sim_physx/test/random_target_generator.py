@@ -52,4 +52,4 @@ while True:
     rospy.init_node("random_target_generator")
     pub_target.publish(points)
 
-    sleep(0.1)
+    sleep(10)
