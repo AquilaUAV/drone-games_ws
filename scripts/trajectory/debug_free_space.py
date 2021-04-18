@@ -9,10 +9,16 @@ free_spaces2 = [[0.0, 0.0, 0.8, 0.8], [2.0, 0.0, 0.8, 0.8], [-2.0, 0.0, 0.8, 0.8
                 [0.0, -2.0, 0.8, 0.8]]
 free_spaces3 = [[0.0, 0.0, 2.8, 1.8], [6.0, 0.0, 3.8, 2.8], [-6.0, 0.0, 1.8, 5.8], [0.0, 6.0, 4.8, 2.8],
                 [0.0, -6.0, 2.8, 4.8]]
+free_space4 = "847 w6 -6.0 6.0 2.0 2.0 0.0 6.0 2.0 2.0 6.0 6.0 2.0 2.0 -3.0 3.0 2.0 2.0 3.0 3.0 2.0 2.0 -6.0 0.0 2.0 2.0 0.0 0.0 2.0 2.0 6.0 0.0 2.0 2.0 -3.0 -3.0 2.0 2.0 3.0 -3.0 2.0 2.0 -6.0 -6.0 2.0 2.0 0.0 -6.0 2.0 2.0 6.0 -6.0 2.0 2.0"
 
-free_spaces0 = free_spaces3
+free_space4 = free_space4.split(' ')
+free_space4 = [float(i) for i in free_space4[2:]]
+free_space4 = [free_space4[i * 4:(i * 4 + 4)] for i in range(len(free_space4) // 4)]
+print(free_space4)
+
+free_spaces0 = free_space4
 radius0 = 0.6
-num0 = 6
+num0 = 24
 
 space_finder = FreeSpaceFinder2D()
 found_points = space_finder.find_optimal_points(free_spaces0, radius0, num0)

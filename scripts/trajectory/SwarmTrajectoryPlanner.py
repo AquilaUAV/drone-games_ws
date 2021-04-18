@@ -191,23 +191,27 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
                         final_plane = move_point + move_vector
                         x_free = np.cross(move_vector, np.array([0.0, 0.0, 1.0]))
                         y_free = np.cross(x_free, move_vector)
+                        x_free_bias = 0.0
+                        y_free_bias = 0.0
+                        if self.trajectoty_version[0] == 6:
+                            x_free_bias = 1.0
                         x_free /= linalg.norm(x_free)
                         y_free /= linalg.norm(y_free)
                         for step_back in range(self.instances_num // len(free_space) + 1):
                             if step_back != (self.instances_num // len(free_space)):
                                 for space in free_space:
-                                    point = final_plane + space[0] * x_free + space[
-                                        1] * y_free - move_vector * self.distance_between_drones * step_back / linalg.norm(
-                                        move_vector)
+                                    point = final_plane + (space[0] + x_free_bias) * x_free + (space[1] + y_free_bias) \
+                                            * y_free - move_vector * self.distance_between_drones * step_back \
+                                            / linalg.norm(move_vector)
                                     second_point.transforms.append(self._transform_from_point(point))
                             elif self.instances_num % len(free_space) != 0:
                                 final_free_space = self.free_space_finder.find_optimal_points(walls, self.radius,
                                                                                               self.instances_num % len(
                                                                                                   free_space))
                                 for space in final_free_space:
-                                    point = final_plane + space[0] * x_free + space[
-                                        1] * y_free - move_vector * self.distance_between_drones * step_back / linalg.norm(
-                                        move_vector)
+                                    point = final_plane + (space[0] + x_free_bias) * x_free + (space[1] + y_free_bias) \
+                                            * y_free - move_vector * self.distance_between_drones * step_back \
+                                            / linalg.norm(move_vector)
                                     second_point.transforms.append(self._transform_from_point(point))
                         target.points.append(first_point)
                         target.points.append(second_point)
@@ -224,6 +228,8 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
                         move_vector = move_vector * (
                                 self.backward_throw + self.forward_throw + 2 * self.optimal_shape_step) / linalg.norm(
                             move_vector)
+                        rospy.logwarn(old_point.transforms[0].translation)
+                        rospy.logwarn(move_vector)
                         for drone in range(len(old_point.transforms)):
                             new_vector = old_point.transforms[drone].translation
                             new_vector = np.array([new_vector.x, new_vector.y, new_vector.z])
