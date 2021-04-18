@@ -193,8 +193,10 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
                         y_free = np.cross(x_free, move_vector)
                         x_free_bias = 0.0
                         y_free_bias = 0.0
+                        """
                         if self.trajectoty_version[0] == 6:
                             x_free_bias = 1.0
+                        """
                         x_free /= linalg.norm(x_free)
                         y_free /= linalg.norm(y_free)
                         for step_back in range(self.instances_num // len(free_space) + 1):
@@ -228,8 +230,6 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
                         move_vector = move_vector * (
                                 self.backward_throw + self.forward_throw + 2 * self.optimal_shape_step) / linalg.norm(
                             move_vector)
-                        rospy.logwarn(old_point.transforms[0].translation)
-                        rospy.logwarn(move_vector)
                         for drone in range(len(old_point.transforms)):
                             new_vector = old_point.transforms[drone].translation
                             new_vector = np.array([new_vector.x, new_vector.y, new_vector.z])
