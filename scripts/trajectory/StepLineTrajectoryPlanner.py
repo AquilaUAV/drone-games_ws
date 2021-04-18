@@ -14,7 +14,7 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
     def __init__(self):
         super().__init__(node_name="line_trajectory_planner")
         self.first_step = -2.0
-        self.distance_between_drones = 2.0  # МЕНЯТЬ ЭТО
+        self.distance_between_drones = 3.0  # МЕНЯТЬ ЭТО
         rospy.loginfo(f"first_step initialized with {self.first_step}")
         rospy.loginfo(f"distance_between_drones initialized with {self.distance_between_drones}")
         self.initial_poses = None
@@ -262,7 +262,7 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
         self.pub_disarm = rospy.Publisher("/step_line_trajectory_controller/disarm", Bool, queue_size=1)
 
     def _planner_loop(self):
-        rate = rospy.Rate(220)
+        rate = rospy.Rate(20)
 
         while not rospy.is_shutdown():
             if self.disarm:
