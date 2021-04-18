@@ -16,8 +16,9 @@ class StepLineTrajectoryController(MultirotorController):
         self.instances_num = self._get_num_drones()
         self.initial_poses_data = {}
         self.initial_poses_samples = {}
-        self.max_poses_errors = 6.0  # МЕНЯТЬ ЭТО
-        self.pose_error_ku = 1.0  # МЕНЯТЬ ЭТО
+        self.max_poses_errors = 4.0  # МЕНЯТЬ ЭТО
+        self.pose_error_ku = 2.0  # МЕНЯТЬ ЭТО
+        self.pose_error_windup = 12.0  # МЕНЯТЬ ЭТО
 
     def estimate_initial_poses(self, n, dt):
         if dt < self.takeoff_timeout / 2:
@@ -88,20 +89,18 @@ class StepLineTrajectoryController(MultirotorController):
         self.mc_takeoff(pt, n, dt)
         self.estimate_initial_poses(n, dt)
         point = self._data[n].get("target_state")
-        if point is not None:
-            pose = self._data[n].get("inner_state")
-            if pose is None:
-                return
-            point = np.array(point)
+        pose = self._data[n].get("local_position/pose")
+        if point is not None and pose is not None:
+            pose = pose.pose.position
+            pose = [pose.x, pose.y, pose.z]
             pose = np.array(pose)
-            vector = np.array(point) - pose
-            vector = self.pose_error_ku * vector
-            self.set_pos(pt, *(point).tolist())
-
-        if dt < 2.0:
-            step = Float64()
-            step.data = 1 / 220 * self.instances_num
-            self.pub_apply_step.publish(step)
+            point = np.array(point)
+            vector = point - pose
+            error = self.pose_error_ku * linalg.norm(vector)
+            if error > self.pose_error_windup:
+                error = self.pose_error_windup
+            vector = error * vector / linalg.norm(vector)
+            self.set_vel(pt, *(vector).tolist())
 
         poses_errors = self.estimate_poses_errors()
         if len(poses_errors) > 0 and max(poses_errors.values()) < self.max_poses_errors:

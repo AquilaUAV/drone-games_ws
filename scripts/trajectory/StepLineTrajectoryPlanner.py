@@ -14,8 +14,8 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
     def __init__(self):
         super().__init__(node_name="line_trajectory_planner")
         self.first_step = -2.0
+        self.distance_between_drones = 2.0  # МЕНЯТЬ ЭТО
         rospy.loginfo(f"first_step initialized with {self.first_step}")
-        self.distance_between_drones = 4.0  # МЕНЯТЬ ЭТО
         rospy.loginfo(f"distance_between_drones initialized with {self.distance_between_drones}")
         self.initial_poses = None
         self.maximum_start_vectors_lengths = {}
@@ -55,8 +55,6 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
                 previous = [0.0, 0.0]
             else:
                 previous = self.obstacles_avoid(key - 1)
-            rospy.logwarn(free_spaces)
-            rospy.logwarn(previous)
             maximum_free_space = max([min(*spaces[2:]) for spaces in free_spaces])
             maximum_spaces = [spaces for spaces in free_spaces if min(*spaces[2:]) == maximum_free_space]
             optimal_lines = [[spaces[0], spaces[1], spaces[2] - maximum_free_space, spaces[3] - maximum_free_space] for
@@ -103,7 +101,6 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
             free = best_vectors[0]
             free[0] += previous[0]
             free[1] += previous[1]
-            rospy.logwarn(free)
         self.obstacles_avoided[key] = free
         return free[0], free[1]
 
