@@ -191,6 +191,7 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
                         final_plane = move_point + move_vector
                         x_free = np.cross(move_vector, np.array([0.0, 0.0, 1.0]))
                         y_free = np.cross(x_free, move_vector)
+
                         x_free_bias = 0.0
                         y_free_bias = 0.0
 

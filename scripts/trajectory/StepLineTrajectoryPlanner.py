@@ -185,7 +185,15 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
                         obstacle_vector_x /= linalg.norm(obstacle_vector_x)
                         obstacle_vector_y /= linalg.norm(obstacle_vector_y)
                         vector_free_x, vector_free_y = self.obstacles_avoid(key)
-                        obstacle_avoid_vector = obstacle_vector_x * vector_free_x + obstacle_vector_y * vector_free_y
+
+                        x_free_bias = 0.0
+                        y_free_bias = 0.0
+
+                        if key == 6:
+                            x_free_bias = 1.0
+
+                        obstacle_avoid_vector = obstacle_vector_x * (
+                                vector_free_x + x_free_bias) + obstacle_vector_y * (vector_free_y + y_free_bias)
                     if key == 1 and i == 0:
                         move_start = move_start + move_vector * self.border_size / linalg.norm(move_vector)
                     elif key == -1 and i == len(curent_central) - 2:
