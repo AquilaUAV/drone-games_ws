@@ -188,9 +188,10 @@ class StepLineTrajectoryPlanner(AbstractTrajectoryPlanner):
 
                         x_free_bias = 0.0
                         y_free_bias = 0.0
-
+                        """
                         if key == 6:
                             x_free_bias = 1.0
+                        """
 
                         obstacle_avoid_vector = obstacle_vector_x * (
                                 vector_free_x + x_free_bias) + obstacle_vector_y * (vector_free_y + y_free_bias)

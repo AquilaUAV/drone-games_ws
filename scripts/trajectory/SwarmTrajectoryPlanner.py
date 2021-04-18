@@ -194,10 +194,10 @@ class SwarmTrajectoryPlanner(AbstractTrajectoryPlanner):
 
                         x_free_bias = 0.0
                         y_free_bias = 0.0
-
+                        """
                         if self.trajectoty_version[0] == 6:
                             x_free_bias = 1.0
-
+                        """
                         x_free /= linalg.norm(x_free)
                         y_free /= linalg.norm(y_free)
                         for step_back in range(self.instances_num // len(free_space) + 1):
