@@ -36,6 +36,6 @@ world="race_1.world"
 num=12
 
 team="AquilaUAV"
-u_cmd="roslaunch drone-games_ws step_line_trajectory_flight.launch"
+u_cmd="roslaunch drone-games_ws swarm_trajectory_flight.launch"
 ```
 
